@@ -1,0 +1,41 @@
+hdfs的应用:
+    hdfs归根结底就是一个文件系统   类似于1inux   
+    1)hdfs命令方式
+        hdfs文件系统中文件的访问只有一种方式：只能通过绝对路径
+        /   抽象根目录   具体表示：hdfs://Hadoop01:9000
+        开启 hadoop或hdfs的客户端
+        hadoop fs(开启原生文件系统客户端)
+        hadoop fs -ls
+        hdfs的核心功能： 上传(put)  下载(get)
+        上传：hadoop fs -put 本地路径 HDFS路径
+
+        下载：hadoop fs -get HDFS路径 本地路径
+
+        合并下载：hadoop fs -getmerge /ss/aa.txt /ss/bb.txt ./cc.txt
+            上面的命令意思是合并aa.txt and bb.txt下载到本地当前目录下的cc.txt文件
+
+        查看HDFS文件：hadoop fs -cat /ss/aa.txt
+
+        删除HDFS文件：hadoop fs -rm -r -f /ss/bb.txt
+            -r  递归删除
+            -f  强制删除
+
+        移动和复制：mv(移动or改名)      cp(复制)
+
+        些命令在集群中的任意节点都可以做    hdfs文件系统中你看到的目录结构只是一个抽象目录树
+        实际存储在集群中的节点上
+        假设 aa.txt 大小为150M  上传hadoop fs -put aa.txt /
+        会在根目录下看到/aa.txt
+        但是aa.tκt真实存储的时候会先进行分块分3块,进行存储,假设集群中5个存储节点
+        这3个块存储在那个节点由namenode进行分配
+
+        删除空目录：-rmdir
+
+        从本地剪切到hdfs：-moveFromLocal
+
+        从hdfs剪切到本地：-moveToLocal
+
+        文件追加：-appendToFile 本地文件 hdfs文件
+            这个追加是在末尾追加的
+
+        

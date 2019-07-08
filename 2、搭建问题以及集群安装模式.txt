@@ -1,0 +1,116 @@
+搭建过程中会遇到的问题：
+    1）主机找不到    
+        （1）找/etc/hostname这个文件，是配置主机名用的
+        （2）重启机器
+    2）格式化的时候报错
+        配置文件错误
+启动过程中遇到的问题
+    某些进程启动不了？
+        措施1：暴力措施，
+            全部关闭集群重新启动
+            stop-dfs.sh   在任意节点执行
+            stop-yarn.sh  在yarn主节点执行
+            重新启动，直接启动就可以了
+            start-dfs.sh  在任意节点执行
+            start-yarn.sh 在yarn主节点执行
+        措施2：单独启动某个进程
+            单独启动hdfs的相关进程,用hadoop-daemon.sh
+            命令用法：hadoop-daemon.sh start hdfs相关的进程
+            例如: hadoop-daemon.sh start datanode
+                  hadoop-daemon.sh start namenode
+                  hadoop-daemon.sh start secondarynamenode
+            单独启动yarn的相关进程的命令,用yarn-daemon.sh
+                yarn-daemon.sh start nodemanager
+                yarn-daemon.sh start resourcemanager
+搭建过程中的注意事项：
+    1）集群的成功的格式化只能格式化一次
+        格式化过程中：创建出来的namenode存储数据的相关目录
+            VERSION文件：用来记录集群的版本信息的，每次格式化都会生成一个新的版本信息
+                namespaceID=1691531954
+                clusterID=CID-6440aa3e-b15f-4d41-8f71-9b2259c1c361
+                cTime=0
+                storageType=NAME_NODE
+                blockpoolID=BP-2062732477-192.168.98.151-1561722737768
+                layoutVersion=-63
+        datanode的相关数据信息是在启动hdfs的时候生成的 
+            VERSION：记录datanode相关版本信息
+                storageID=DS-fa8cf94b-6d21-4973-8d72-e888b8ca2b5c
+                clusterID=CID-6440aa3e-b15f-4d41-8f71-9b2259c1c361
+                cTime=0
+                datanodeUuid=eac8dd4d-f3cf-4c4d-9770-a0466001ced7
+                storageType=DATA_NODE
+                layoutVersion=-56
+        两个文件中的clusterID相同的时候datanode才会认为是同一个集群的
+        想要重复格式化：
+            分两步走：
+                1）删除namenode的数据目录
+                rm -rf /home/admin/data/hadoopdata/name
+                2）删除datanode的数据目录
+                rm -rf /home/admin/data/hadoopdata/data
+
+                删除之后才可以重新格式化，否则会造成datanode启动不了
+                也可一步到位rm -rf /home/admin/data  再重新格式化
+    2）集群搭建过程中的环境变量的配置
+        jdk  hadoop
+        在Linux下修改环境变量的地方有3个地方
+        （1）/etc/profile  系统环境变量，针对所有用户
+        （2）~/.bashrc     用户环境变量，针对的是当前用户
+        （3）~/.bash_profile  用户环境变量，针对的是当前用户
+
+        这三个配置文件的加载顺序：
+        profile  >  .bashrc  >  .bash_profile  
+        后面加载的会覆盖前面的配置
+
+    3）时间同步问题
+        只要是完全分布式的，多个节点之间就要做时间同步
+        目的：
+            1）要和北京/上海时间保持一致   不是
+            2）集群內部各个节点之间时间保持一致  是的
+        为什么？
+            集群內部各个节点之间需要通信，尤其是datanode和namenode之间，他们之间的通信依靠心跳
+            他们之间的心跳是有一个时间控制的，这个时间是630s
+            所以要做时间同步
+集群的安装模式：
+    1）单机模式：直接解压就可以用了，所用所有的文件都来自于本地
+    2）伪分布式：可看作是完全分布式，但跑在一个节点上，所有的进程全部都配置到一个节点上
+        ，有分布式文件系统的，只不过这个文件系统只有一个节点
+    3）完全分布式：
+        hdfs为例：
+        在宏观上看就是一个大的节点，后台采用的硬件配置是三台机器的硬件配置之和
+        但是对于用户来说完全感觉不到
+        在完全分布式中有主节点，有从节点
+        主节点namenode只有一个，从节点datanode有多个，真实生产中namenode会单独
+        做一个节点，如果集群中namenode宕机，整个集群还可以使用吗？不可以！
+            namenode：（1）主要作用存储元数据（管理数据的数据，存储的就是datanode存储数据的描述）
+                数据存储在datanode的哪一个节点，数据是谁上传的等等
+                （2）负责读写请求   上传   下载
+            datanode：负责集群中真正的数据存储的
+        如果namenode宕机，集群无法使用，这也是完全分布式的一大缺点，存在单点故障问题
+        一般生产中不太使用，主要用来学习，公司测试时使用，节点个数比较少的时候也会使用这种模式
+        节点数目越多，namenode宕机的可能性越大，压力太大
+        助理secondarynamenode：只是一个助理，作用只是分担namenode的压力，不能代替namenode的位置
+    4）高可用：目前最广泛的搭建方式
+        高可用：是指集群可以持续对外提供服务   做到7*24小时不间断
+        依赖于zookeeper组件来实现
+        集群架构：双主多从
+        会有两个namenode，但是在同一时间只有一个是活跃的namenode，我们把这个
+        活跃的namenode称为active的，另一个处于热备份状态，把这个节点叫做standby
+        但是两个主节点存储的元数据是一模一样的，当active namenode宕机时，
+        standby的namenode可以立马切换为active的namenode对外提供服务，
+        如果过一段时间刚才宕机的namenode又活过来了，这个namenode只能是standby的了
+
+        但是这个集群存在的一个缺陷：在同一时间集群中只有一个active的namenode，
+        也就是说我们的集群的主节点的能力只有一个节点，如果集群中节点个数过多的
+        时候会造成namenode崩溃
+        元数据过多的时候会造成namenode崩溃（两个都崩溃）没有真正的分担namenode的压力
+
+        实际生产中使用
+    5）联邦机制：
+        同一个集群中可以有多个主节点，这些主节点的地位是一样的
+        同一时间可以有多个活跃的namenode
+        这两个namenode共同使用集群中所有的datanode，每个namenode只负责管理
+        集群中的datanode上的一部分数据
+
+        联邦+高可用
+        超大集群用这个
+

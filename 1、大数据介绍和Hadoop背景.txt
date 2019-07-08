@@ -1,0 +1,300 @@
+大数据介绍
+    数据： 数据就是数值，也就是我们通过观察、实验或计算得出的结果。数据有很多种，最简单的就是数字。数据也可以是文字、图像、声音等。数据可以用于科学研究、设计、查证等。
+
+    按结构划分： 结构化数据、半结构化数据、非结构化数据
+
+    概念： 海量的数据
+
+    大数据的特点： 4V（Volume容量、Variety种类、Velocity速度、Value价值）
+        1、数据量大
+        1 Byte = 8 bit
+        1 KB = 1024 Bytes = 8192 bit
+        1 MB = 1024 KB = 1048576 Bytes
+        1 GB = 1024 MB = 1048576 KB
+        1 TB = 1024 GB = 1048576 MB （普通用户级别）
+        1 PB = 1024 TB = 1048576 GB （企业及数据级别）
+        1 EB = 1024 PB = 1048576 TB
+        1 ZB = 1024 EB = 1048576 PB （全球数据总量级别）
+
+        Byte-->KB-->MB-->GB-->TB-->PB-->EB-->ZB-->YB-->BB-->NB-->DB
+
+        2、数据增长速度快
+
+        3、数据种类多
+            文字  图片  视频
+        4、数据的价值密度低，但整体价值高
+    数据的来源：
+        1）公司中自己的业务数据，如淘宝，京东
+        2）第三方
+        3）爬虫 爬数据
+
+    数据处理：
+        1）怎么处理缺失的数据？
+            考虑缺失数据是否影响整体的业务逻辑  不影响的话删除
+            如果是和钱相关的数据  要慎重考虑，不可轻易删除
+        2）敏感数据
+            如手机号等    进行脱敏处理，一般用加密算法处理，如md5
+    数据价值：
+        人物画像
+            根据用户的数据可以给用户做一个全方位的分析画像  属性：姓名，性别，学历，性格，人脉，消费水平等
+
+    了解几个概念：
+        集群：多个机器共同协作完成同一个任务，每一个机器叫做节点，多个机器共同组成的群体叫做集群，集群中的每个节点之间是通过局域网或其他方式进行通信
+        分布式：一个任务被分成多个子任务或模块，每个子任务跑在不同的节点上
+            分布式文件系统  分布式数据库  分布式计算系统
+        负载均衡：如nginx负责负载均衡的
+            每个节点分配到的任务基本均衡
+            负载均衡：一定是和机器的配置相匹配的
+
+Hadoop：
+    来源背景：
+        03年左右谷歌公布的3篇论文被doungCuting发现，doungCuting之前一直在做Luncence   Nutch项目  搜索引擎----后台有强大的数据支持  爬虫
+        数据存储， 数据索引，数据查询
+        数据的存储问题   数据索引的问题
+        Google 03年将他的处理方案以论文的形式发表出来
+        3篇论文为：
+            GFS：Google file system   文件的存储方案
+            MAPREDUCE：分布式计算思想
+            BIGTABLE：大表机制  分布式数据库
+        doungCuting用Java实现了一套  开源
+        GFS-->HDFS
+        MAPREDUCE-->MAPREDUCE
+        BIGTABLE-->Hbase
+        hdfs/mapreduce  叫  Hadoop
+
+    Hadoop是什么？
+        Hadoop是一个分布式的开源框架
+        支持成千上万的节点，每个节点依靠本地的计算和存储
+        在应用层面提供高可用
+        将硬件错误看成一个常态
+
+    Hadoop包括哪些模块？
+        common：用于提供下面3个模块工具类的，并且下面三个模块通信遵循一个规则，即rpc通信框架
+        hdfs：Hadoop的分布式文件存储系统，海量数据存储
+            分布式文件系统：将一个文件切成小文件存储在不同的节点上
+            架构：主从架构，主---老大   从---小弟
+            主：Java进程   namenode（一个）
+            从：           datanode（多个）
+            助理：         secondarynamenode  分担老大的压力
+        yarn：集群的资源调度框架，类似于Windows的操作系统，负责集群的资源管理
+            架构：主从的
+            老大：resourcemanager  负责统筹资源
+            从：  nodemanager      
+        mapreduce：分布式计算框架  有计算任务的时候才会有相应的进程
+
+    Hadoop的搭建：
+        搭建准备：
+            1）ip配置 vim /etc/sysconfig/network-scripts/ifcfg-ens33
+            2）主机名 vim /etc/hostname
+            3）主机映射 vim /etc/hosts
+            4）关闭防火墙和sellinux
+                关闭防火墙：systemctl stop firewalld
+            5）将系统的启动级别改为3（完全多用户模式）
+            6）创建普通用户，并为普通用户添加sudoers权限
+                创建用户：useradd 用户名
+                设置密码：passwd 用户名
+                为用户添加权限：
+                    vim /etc/sudoers
+                    admin  ALL=(ALL)  ALL
+            7）配置免密登录
+                先切换到普通用户，再执行下面的操作
+                (1)生成密钥
+                    ssh-keygen
+                (2)发送密钥
+                    ssh-copy-id 主机名
+                (3)远程连接主机
+                    ssh 主机名
+            8）安装配置JDK
+                查看是否装有老的jdk版本并卸载：
+                    检查：rpm  -qa | grep  jdk
+                    卸载：rpm  -e  jdk***  --nodeps  //参数nodeps作用是卸载时忽略依赖
+            9）时间同步  伪分布式不需要  分布式需要
+                1）不能联网的时候    手动指定    date -s 时间  或者手动搭建一个时间服务器
+                2）能联网的时候    找一个公网中的公用的时间服务器  所有节点的时间和公网中的时间服务器保持一致
+                    ntpdate 公网的时间服务器地址
+                    如：ntpdate ntp1.aliyun.com
+                    完全分布式必须要做，每个节点都要做时间同步
+        
+        选择安装版本hadoop2.7.7
+        安装一定切换用户 为普通用户
+
+        1）伪分布式的搭建
+            （1）上传
+            （2）解压  
+                tar -zxf hadoop***
+            （3）修改配置文件
+                在 ${HADOOP_HOME}/etc/hadoop 下
+                需要修改6个配置文件
+                    （1）hadoop-env.sh
+                        export JAVA_HOME=/home/admin/soft/jdk1.8.0_201
+
+                    （2）core-site.xml
+                        核心配置文件
+                        <property>
+                            <name>fs.defaultFS</name>
+                            <!-- 配置主节点的url -->
+                            <value>hdfs://Hadoop01:9000</value>
+                        </property>
+
+                    （3）hdfs-site.xml
+                        <property>
+                            <!-- 配置存储份数 -->
+                            <name>dfs.replication</name>
+                            <value>1</value>
+                        </property>
+
+                    （4）yarn-site.xml
+                        <property>
+                            <name>yarn.nodemanager.aux-services</name>
+                            <value>mapreduce_shuffle</value>
+                        </property>
+
+                    （5）mapred-site.xml
+                        <property>
+                            <name>mapreduce.framework.name</name>
+                            <value>yarn</value>
+                        </property>
+
+                    （6）slaves
+                        配置的是secondarynamenode节点的主机名
+                        本次安装的是伪分布式的，所以修改slaves文件里的内容为Hadoop01
+
+                    （7）配置环境变量
+                        在/etc/profile里：
+                        export HADOOP_HOME=/home/admin/soft/hadoop-2.7.7
+                        PATH=$HADOOP_HOME/bin:$HADOOP_HOME/sbin:$PATH
+                        最后source /etc/profile
+
+                    （8）配置完成后先别着急启动，先进行格式化
+                        hadoop namenode -format
+
+                    （9）启动
+                        start-all.sh   不建议使用此命令，建议使用以下命令：
+                        start-dfs.sh   start-yarn.sh
+
+                    （10）验证
+                        1、通过jps验证有5个进程
+                            18177 NodeManager
+                            17929 SecondaryNameNode
+                            18074 ResourceManager
+                            17771 DataNode
+                            17645 NameNode
+                        2、页面
+                            hdfs:主机名[/IP]:50070
+                            yarn:resourcemanager的IP:8088
+
+        2）完全分布式的搭建
+            先在一个节点上执行所有的修改，再远程发送
+            （1）上传
+            （2）解压
+                tar -zxf hadoop***.tar.gz
+            （3）配置环境变量
+            （4）修改配置文件
+                在 ${HADOOP_HOME}/etc/hadoop 下
+                需要修改6个配置文件
+                集群规划：
+                        Hadoop01     Hadoop02        Hadoop03
+                hdfs -- NameNode                     SenondaryNamenode
+                        DataNode     DataNode        DataNode
+                yarn --              ResourceManager    
+                        NodeManager  NodeManager     NodeManager
+
+                    （1）hadoop-env.sh
+                        export JAVA_HOME=/home/admin/soft/jdk1.8.0_201
+
+                    （2）core-site.xml
+                        核心配置文件
+                        <property>
+                            <name>fs.defaultFS</name>
+                            <value>hdfs://Hadoop01:9000</value>
+                            <description>配置主节点NameNode的url</description>
+                        </property>
+                        <property>
+                            <name>hadoop.tmp.dir</name>
+                            <value>/home/admin/hadoopdata</value>
+                            <description>配置tmp的目录</description>
+                        </property>
+
+                    （3）hdfs-site.xml
+                        <property>
+                            <name>dfs.namenode.name.dir</name>
+                            <value>/home/admin/data/hadoopdata/name</value>
+                            <description>为了保证元数据的安全一般配置多个不同的目录</description>
+                        </property>
+                        <property>
+                            <name>dfs.datanode.data.dir</name>
+                            <value>/home/admin/data/hadoopdata/data</value>
+                            <description>datanode的数据存储目录</description>
+                        </property>
+                        <property>
+                            <name>dfs.replication</name>
+                            <value>3</value>
+                            <description>HDFS的数据块的副本存储个数</description>
+                        </property>
+                        <property>
+                            <name>dfs.secondary.http.address</name>
+                            <value>Hadoop03:50090</value>
+                            <description>secondarynamenode运行节点的信息，和namenode不同节点</description>
+                        </property>
+
+                    （4）yarn-site.xml
+                        <property>
+                            <name>yarn.resourcemanager.hostname</name>
+                            <value>Hadoop02</value>
+                            <description>配置YARN的主节点</description>
+                        </property>
+                        <property>
+                            <name>yarn.nodemanager.aux-services</name>
+                            <value>mapreduce_shuffle</value>
+                            <description>YARN集群为MapReduce程序提供的shuffle服务</description>
+                        </property>
+
+                    （5）mapred-site.xml
+                        <property>
+                            <name>mapreduce.framework.name</name>
+                            <value>yarn</value>
+                            <description>指定MapReduce任务跑在Yarn上</description>
+                        </property>
+
+                    （6）slaves
+                        配置的是从节点的信息
+                        本次安装的是伪分布式的，所以修改slaves文件里的内容为
+                        Hadoop01
+                        Hadoop02
+                        Hadoop03
+
+            （5）远程发送 
+                scp  -r hadoop-2.7.7  admin@Hadoop02:~/soft
+                scp  -r hadoop-2.7.7  admin@Hadoop03:~/soft
+                scp  /etc/profile  admin@Hadoop02:/etc/
+            （6）进行格式化    必须在namenode的节点进行格式化
+                hadoop namenode -format
+
+            （7）启动
+                jsp查看进程
+                启动dfs   start-dfs.sh   任意节点都可以启动dfs
+                启动yarn  start-yarn.sh  在yarn的主节点执行
+                网页：
+                    hdfs：   Hadoop01:50070
+                    yarn:    Hadoop03:8088
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

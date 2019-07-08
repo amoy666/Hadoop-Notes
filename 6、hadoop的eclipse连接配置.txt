@@ -1,0 +1,44 @@
+通过 java Api的方式操作:
+    配置
+        1.需要eclipse安装插件   在eclipse中添加hadoop的插件
+        hadoop-eclipse-plugin-2.7.5.jar   eclipse开发hadoop插件
+        放在eclipse的plugins目录下
+        2.配置本地的hadoop环境windows
+        解压
+        配置环境变量
+            HADOOP_HOME=D:\soft\hadoop\hadoop-2.7.7
+            PATH中添加: %HADOOP_HOME%\bin;
+        3.添加 windows下兼容性的插件
+            将 hadoop.dll添加到c:\Windows\System32
+            将 winutis.exe放在hadoop安装目录bin目录下
+        4.重启eclipse
+        5.配置可视化界面
+            1)将hadoop的环境变量添加到eclipse中
+            windows>>> prefence>>搜索 hadoop   双击导入 hadoop的安装目录
+            2)配置 hadoop的通信地址
+            windows>>> show view> other>> mapreduce调出 hadoop的配置界面
+            在界面上右键>>>new hadoop location
+            location name:名字随便起    连接名
+            链接地址
+            链接的用户名
+            注意：hadoop节点的防火墙一定要关闭
+    Hadoop的hdfs的API调用：
+        建工程：
+            1.导入jar包：3种
+                1）在工程建一个lib包，右键build path
+                    优点是代码移动的时候不用重新导包
+                    缺点是jar包冲突不好解决   造成工程过于臃肿
+                2）使用maven管理jar包
+                    优点：jar包管理比较方便，解决了jar包冲突的问题
+                    缺点：代码移动的时候需要重构工程
+                3）可以手动建一个jar包依赖库
+
+
+
+
+
+
+
+
+
+
